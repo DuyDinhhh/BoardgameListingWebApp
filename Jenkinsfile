@@ -1,30 +1,32 @@
 pipeline {
-    agent {label 'JDK17'}
-    
-     tools {
+    agent { label 'JDK17' }
+
+    tools {
         jdk 'jdk17'
-        maven "maven3"
+        maven 'maven3'
     }
-    environment{
+
+    environment {
         SCANNER_HOME = tool 'sonar-scanner'
-        NEXUS_URL = "192.168.64.37:8081"
-        NEXUS_CREDENTIALS_ID ="for-nexus"
-        NEXUS_REPOSITORY = "maven-releases"
-        NEXUS_GROUP= "com/javaproject"
-        NEXUS_ARTIFACT_ID="spring-petclinic"
-        ARTIFACT_VERS="0.0.1"
+        NEXUS_URL = '192.168.64.37:8081'
+        NEXUS_CREDENTIALS_ID = 'for-nexus'
+        NEXUS_REPOSITORY = 'maven-releases'
+        NEXUS_GROUP = 'com/javaproject'
+        NEXUS_ARTIFACT_ID = 'spring-petclinic'
+        ARTIFACT_VERS = '0.0.1'
+    }
+
     stages {
-    
- 		stage('Branch Validation') {
+        stage('Branch Validation') {
             steps {
                 script {
-                    if (env.BRANCH_NAME.startsWith("develop/")) {
-                        env.PIPELINE_TYPE = "develop"
-                    } else if (env.BRANCH_NAME.startsWith("uat/")) {
-                        env.PIPELINE_TYPE = "uat"
+                    if (env.BRANCH_NAME.startsWith('develop/')) {
+                        env.PIPELINE_TYPE = 'develop'
+                    } else if (env.BRANCH_NAME.startsWith('uat/')) {
+                        env.PIPELINE_TYPE = 'uat'
                         env.DEPLOY_TAG = "${new Date().format('yyMMdd')}-uat-${env.GIT_COMMIT.substring(0, 7)}"
-                    } else if (env.BRANCH_NAME == "main") {
-                        env.PIPELINE_TYPE = "main"
+                    } else if (env.BRANCH_NAME == 'main') {
+                        env.PIPELINE_TYPE = 'main'
                         env.DEPLOY_TAG = "${new Date().format('yyMMdd')}-release"
                     } else {
                         error("Branch ${env.BRANCH_NAME} is not managed by this pipeline.")
@@ -32,27 +34,30 @@ pipeline {
                 }
             }
         }
-     
+
         stage('Compile') {
             steps {
                 sh 'mvn compile'
-             }
+            }
         }
+
         stage('Test') {
             steps {
                 sh 'mvn test'
-             }
+            }
         }
+
         stage('Package') {
             when {
                 expression { env.PIPELINE_TYPE != 'develop' }
             }
             steps {
                 sh 'mvn clean package'
-             }
+            }
         }
+
         stage('Sonarqube') {
-        	steps {
+            steps {
                 script {
                     withSonarQubeEnv('SONAR_LATEST') {
                         sh """
@@ -65,20 +70,20 @@ pipeline {
                 }
             }
         }
-        stage('Push to nexus') {
-          	when {
+
+        stage('Push to Nexus') {
+            when {
                 expression { env.PIPELINE_TYPE in ['uat', 'main'] }
             }
             steps {
                 script {
-                    // Define artifact paths
-                    def artifactPath = "target/${NEXUS_ARTIFACT_ID}-3.4.0-SNAPSHOT.jar"
+                    def artifactPath = "target/${NEXUS_ARTIFACT_ID}-${ARTIFACT_VERS}.jar"
                     nexusArtifactUploader(
                         nexusVersion: 'nexus3',
                         protocol: 'http',
                         nexusUrl: NEXUS_URL,
                         groupId: NEXUS_GROUP,
-                        version: DEPLOY_TAG,
+                        version: ARTIFACT_VERS,
                         repository: NEXUS_REPOSITORY,
                         credentialsId: NEXUS_CREDENTIALS_ID,
                         artifacts: [
@@ -93,35 +98,34 @@ pipeline {
                 }
             }
         }
+
         stage('Deploy and Tag') {
-          	when {
+            when {
                 expression { env.PIPELINE_TYPE in ['uat', 'main'] }
             }
             agent { label 'JDK8' }
             steps {
-            	script{
-            		 withCredentials([usernamePassword(credentialsId: 'for-nexus', passwordVariable: 'pass', usernameVariable: 'user')]) {
-                    sh """
+                script {
+                    withCredentials([usernamePassword(credentialsId: 'for-nexus', passwordVariable: 'pass', usernameVariable: 'user')]) {
+                        sh """
                         curl -u $user:$pass -O \
                         http://${NEXUS_URL}/repository/${NEXUS_REPOSITORY}/${NEXUS_GROUP}/${NEXUS_ARTIFACT_ID}/${ARTIFACT_VERS}/${NEXUS_ARTIFACT_ID}-${ARTIFACT_VERS}.jar
-                    """
+                        """
+                        sh "java -jar ${NEXUS_ARTIFACT_ID}-${ARTIFACT_VERS}.jar &"
+                    }
 
-                    sh "java -jar ${NEXUS_ARTIFACT_ID}-${ARTIFACT_VERS}.jar &"
-                   }
-            		
-            		 sh """
+                    sh """
                     git config --global user.email "duy.nguyentadinh@gmail.com"
                     git config --global user.name "duydinhhh"
                     git tag -a ${env.DEPLOY_TAG} -m "Deployed ${env.PIPELINE_TYPE} environment"
                     git push origin ${env.DEPLOY_TAG}
                     """
-            	}
-               
+                }
             }
         }
 
         stage('Health Check') {
-          	when {
+            when {
                 expression { env.PIPELINE_TYPE in ['uat', 'main'] }
             }
             agent { label 'JDK8' }
@@ -133,11 +137,11 @@ pipeline {
                         if (status == '200') {
                             echo "Health Check Passed: HTTP Status ${status}"
                         } else {
-                            echo "Health Check Failedd: HTTP Status ${status}"
-                            error("Health Check Failedd")
+                            echo "Health Check Failed: HTTP Status ${status}"
+                            error("Health Check Failed")
                         }
-                    } catch (error) {
-                        echo "Health Check Failed: ${error.getMessage()}"
+                    } catch (e) {
+                        echo "Health Check Exception: ${e.getMessage()}"
                         error("Health Check Failed")
                     }
                 }
@@ -145,12 +149,13 @@ pipeline {
         }
     }
 
-    
-    post{
-        success{
+    post {
+        success {
             junit testResults: '**/surefire-reports/*.xml'
             archiveArtifacts artifacts: 'target/*.jar'
         }
+        failure {
+            echo 'Pipeline failed. Please review the logs.'
+        }
     }
 }
-
