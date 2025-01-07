@@ -77,7 +77,7 @@ pipeline {
             }
             steps {
                 script {
-                    def artifactPath = "target/${NEXUS_ARTIFACT_ID}-1.0.0.jar"
+                    def artifactPath = "target/${NEXUS_ARTIFACT_ID}-0.0.1.jar"
                     def artifactPathVersion = "${ARTIFACT_VERS}-${env.DEPLOY_TAG}"
                     nexusArtifactUploader(
                         nexusVersion: 'nexus3',
