@@ -83,7 +83,7 @@ pipeline {
                         protocol: 'http',
                         nexusUrl: NEXUS_URL,
                         groupId: NEXUS_GROUP,
-                        version: ARTIFACT_VERS,
+                        version: env.DEPLOY_TAG,
                         repository: NEXUS_REPOSITORY,
                         credentialsId: NEXUS_CREDENTIALS_ID,
                         artifacts: [
