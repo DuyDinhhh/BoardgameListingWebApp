@@ -152,8 +152,14 @@ pipeline {
 
     post {
         success {
-            junit testResults: '**/surefire-reports/*.xml'
-            archiveArtifacts artifacts: 'target/*.jar'
+            script {
+                if (env.PIPELINE_TYPE != 'develop') {
+                    junit testResults: '**/surefire-reports/*.xml'
+                    archiveArtifacts artifacts: 'target/*.jar'
+                } else {
+                    echo "Skipping artifact archiving for develop branch."
+                }
+            }
         }
         failure {
             echo 'Pipeline failed. Please review the logs.'
