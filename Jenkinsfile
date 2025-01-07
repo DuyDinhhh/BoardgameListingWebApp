@@ -24,10 +24,10 @@ pipeline {
                         env.PIPELINE_TYPE = 'develop'
                     } else if (env.BRANCH_NAME.startsWith('uat/')) {
                         env.PIPELINE_TYPE = 'uat'
-                        env.DEPLOY_TAG = "${new Date().format('yyyyMMddHH')}-uat-${env.GIT_COMMIT.substring(0, 7)}"
+                        env.DEPLOY_TAG = "${new Date().format('yyyyMMdd')}-uat-${env.GIT_COMMIT.substring(0, 7)}"
                     } else if (env.BRANCH_NAME == 'main') {
                         env.PIPELINE_TYPE = 'main'
-                        env.DEPLOY_TAG = "${new Date().format('yyyyMMddHH')}-release"
+                        env.DEPLOY_TAG = "${new Date().format('yyyyMMdd')}-release"
                     } else {
                         error("Branch ${env.BRANCH_NAME} is not managed by this pipeline.")
                     }
