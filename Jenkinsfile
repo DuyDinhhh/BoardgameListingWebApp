@@ -111,7 +111,7 @@ pipeline {
                     withCredentials([usernamePassword(credentialsId: 'for-nexus', passwordVariable: 'pass', usernameVariable: 'user')]) {
                         sh """
                         curl -u $user:$pass -O \
-                        http://${NEXUS_URL}/repository/${NEXUS_REPOSITORY}/${NEXUS_GROUP}/${NEXUS_ARTIFACT_ID}/${ARTIFACT_VERS}/${NEXUS_ARTIFACT_ID}-${artifactVersion}.jar
+                        http://${NEXUS_URL}/repository/${NEXUS_REPOSITORY}/${NEXUS_GROUP}/${NEXUS_ARTIFACT_ID}/${artifactVersion}/${NEXUS_ARTIFACT_ID}-${artifactVersion}.jar
                         """
                         sh "java -jar ${NEXUS_ARTIFACT_ID}-${artifactVersion}.jar &"
                     }
