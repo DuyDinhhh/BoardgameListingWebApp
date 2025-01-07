@@ -13,7 +13,6 @@ pipeline {
         NEXUS_REPOSITORY = 'maven-releases'
         NEXUS_GROUP = 'com/javaproject'
         NEXUS_ARTIFACT_ID = 'database_service_project'
-        ARTIFACT_VERS = '0.0.1'
     }
 
     stages {
@@ -24,10 +23,10 @@ pipeline {
                         env.PIPELINE_TYPE = 'develop'
                     } else if (env.BRANCH_NAME.startsWith('uat/')) {
                         env.PIPELINE_TYPE = 'uat'
-                        env.DEPLOY_TAG = "${new Date().format('yyMMdd')}-uat-${env.GIT_COMMIT.substring(0, 7)}"
+                        env.DEPLOY_TAG = "${new Date().format('yyyyMMddHHmmss')}-uat-${env.GIT_COMMIT.substring(0, 7)}"
                     } else if (env.BRANCH_NAME == 'main') {
                         env.PIPELINE_TYPE = 'main'
-                        env.DEPLOY_TAG = "${new Date().format('yyMMdd')}-release"
+                        env.DEPLOY_TAG = "${new Date().format('yyyyMMddHHmmss')}-release"
                     } else {
                         error("Branch ${env.BRANCH_NAME} is not managed by this pipeline.")
                     }
