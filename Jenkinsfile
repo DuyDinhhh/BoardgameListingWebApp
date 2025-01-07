@@ -13,6 +13,7 @@ pipeline {
         NEXUS_REPOSITORY = 'maven-releases'
         NEXUS_GROUP = 'com/javaproject'
         NEXUS_ARTIFACT_ID = 'database_service_project'
+        ARTIFACT_VERS='0.0.1'
     }
 
     stages {
