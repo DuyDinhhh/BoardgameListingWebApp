@@ -157,9 +157,15 @@ pipeline {
                     echo "Skipping artifact archiving for develop branch."
                 }
             }
+            mail to: "duy2004tv@gmail.com",
+            subject: "${JOB_NAME} - Build # ${BUILD_NUMBER} - SUCCESS!",
+            body: "Check console output at ${BUILD_URL} to view the results."
         }
         failure {
             echo 'Pipeline failed. Please review the logs.'
+            mail to: "duy2004tv@gmail.com",
+            subject: "${JOB_NAME} - Build # ${BUILD_NUMBER} - FAILURE!",
+            body: "Failed Log: ${FAILED_STAGE_LOG}. Check console output at ${BUILD_URL} to view the results."
         }
     }
 }
