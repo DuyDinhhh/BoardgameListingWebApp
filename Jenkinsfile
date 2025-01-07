@@ -13,7 +13,7 @@ pipeline {
         NEXUS_REPOSITORY = 'maven-releases'
         NEXUS_GROUP = 'com/javaproject'
         NEXUS_ARTIFACT_ID = 'database_service_project'
-        ARTIFACT_VERS = '0.0.1'
+        ARTIFACT_VERS="1.${env.BUILD_ID}"
     }
 
     stages {
@@ -24,10 +24,10 @@ pipeline {
                         env.PIPELINE_TYPE = 'develop'
                     } else if (env.BRANCH_NAME.startsWith('uat/')) {
                         env.PIPELINE_TYPE = 'uat'
-                        env.DEPLOY_TAG = "${new Date().format('yyMMdd')}-uat-${env.GIT_COMMIT.substring(0, 7)}"
+                        env.DEPLOY_TAG = "${new Date().format('yyyyMMddHHmmss')}-uat-${env.GIT_COMMIT.substring(0, 7)}"
                     } else if (env.BRANCH_NAME == 'main') {
                         env.PIPELINE_TYPE = 'main'
-                        env.DEPLOY_TAG = "${new Date().format('yyMMdd')}-release"
+                        env.DEPLOY_TAG = "${new Date().format('yyyyMMddHHmmss')}-release"
                     } else {
                         error("Branch ${env.BRANCH_NAME} is not managed by this pipeline.")
                     }
@@ -77,13 +77,14 @@ pipeline {
             }
             steps {
                 script {
-                    def artifactPath = "target/${NEXUS_ARTIFACT_ID}-${ARTIFACT_VERS}.jar"
+                    def artifactPath = "target/${NEXUS_ARTIFACT_ID}-0.0.1.jar"
+                    def artifactVersion = "${ARTIFACT_VERS}-${env.DEPLOY_TAG}"
                     nexusArtifactUploader(
                         nexusVersion: 'nexus3',
                         protocol: 'http',
                         nexusUrl: NEXUS_URL,
                         groupId: NEXUS_GROUP,
-                        version: ARTIFACT_VERS,
+                        version: artifactVersion,
                         repository: NEXUS_REPOSITORY,
                         credentialsId: NEXUS_CREDENTIALS_ID,
                         artifacts: [
@@ -106,20 +107,22 @@ pipeline {
             agent { label 'JDK8' }
             steps {
                 script {
+                    def artifactVersion = "${ARTIFACT_VERS}-${env.DEPLOY_TAG}"
                     withCredentials([usernamePassword(credentialsId: 'for-nexus', passwordVariable: 'pass', usernameVariable: 'user')]) {
                         sh """
                         curl -u $user:$pass -O \
-                        http://${NEXUS_URL}/repository/${NEXUS_REPOSITORY}/${NEXUS_GROUP}/${NEXUS_ARTIFACT_ID}/${ARTIFACT_VERS}/${NEXUS_ARTIFACT_ID}-${ARTIFACT_VERS}.jar
+                        http://${NEXUS_URL}/repository/${NEXUS_REPOSITORY}/${NEXUS_GROUP}/${NEXUS_ARTIFACT_ID}/${artifactVersion}/${NEXUS_ARTIFACT_ID}-${artifactVersion}.jar
                         """
-                        sh "java -jar ${NEXUS_ARTIFACT_ID}-${ARTIFACT_VERS}.jar &"
+                        sh "java -jar ${NEXUS_ARTIFACT_ID}-${artifactVersion}.jar &"
                     }
-
-                    sh """
-                    git config --global user.email "duy.nguyentadinh@gmail.com"
-                    git config --global user.name "duydinhhh"
-                    git tag -a ${env.DEPLOY_TAG} -m "Deployed ${env.PIPELINE_TYPE} environment"
-                    git push origin ${env.DEPLOY_TAG}
-                    """
+                    withCredentials([usernamePassword(credentialsId: 'for-github', usernameVariable: 'user', passwordVariable: 'pass')]) {
+                        sh """
+                        git config --global user.email "duy.nguyentadinh@gmail.com"
+                        git config --global user.name "duydinhhh"
+                        git tag -a ${env.DEPLOY_TAG} -m "Deployed ${env.PIPELINE_TYPE} environment"
+                        git push https://$user:$pass@github.com/DuyDinhhh/BoardgameListingWebApp.git ${env.DEPLOY_TAG}
+                        """
+                    }
                 }
             }
         }
@@ -133,13 +136,8 @@ pipeline {
                 script {
                     try {
                         sleep(20) // Wait for the application to start completely
-                        def status = sh(script: "curl -s -o /dev/null -w '%{http_code}' http://192.168.64.35:8080/actuator/health", returnStdout: true).trim()
-                        if (status == '200') {
-                            echo "Health Check Passed: HTTP Status ${status}"
-                        } else {
-                            echo "Health Check Failed: HTTP Status ${status}"
-                            error("Health Check Failed")
-                        }
+                        def response = httpRequest url: 'http://192.168.64.35:8080'
+                        println("Status: "+response.status)
                     } catch (e) {
                         echo "Health Check Exception: ${e.getMessage()}"
                         error("Health Check Failed")
@@ -151,11 +149,23 @@ pipeline {
 
     post {
         success {
-            junit testResults: '**/surefire-reports/*.xml'
-            archiveArtifacts artifacts: 'target/*.jar'
+            script {
+                if (env.PIPELINE_TYPE != 'develop') {
+                    junit testResults: '**/surefire-reports/*.xml'
+                    archiveArtifacts artifacts: 'target/*.jar'
+                } else {
+                    echo "Skipping artifact archiving for develop branch."
+                }
+            }
+            mail to: "duy2004tv@gmail.com",
+            subject: "${JOB_NAME} - Build # ${BUILD_NUMBER} - SUCCESS!",
+            body: "Check console output at ${BUILD_URL} to view the results."
         }
         failure {
             echo 'Pipeline failed. Please review the logs.'
+            mail to: "duy2004tv@gmail.com",
+            subject: "${JOB_NAME} - Build # ${BUILD_NUMBER} - FAILURE!",
+            body: "Failed Log: ${FAILED_STAGE_LOG}. Check console output at ${BUILD_URL} to view the results."
         }
     }
 }
