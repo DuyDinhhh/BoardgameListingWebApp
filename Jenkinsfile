@@ -40,7 +40,7 @@ pipeline {
         stage('Compile') {
             steps {
                 script {
-                    share_library_build.buildSpringboot()
+                    buildSpringboot()
                 }
             }
         }
@@ -48,7 +48,7 @@ pipeline {
         stage('Test') {
             steps {
                 script {
-                    share_library_test.unitTestJava()
+                    unitTestJava()
                 }
             }
         }
@@ -59,7 +59,7 @@ pipeline {
             }
             steps {
                 script {
-                    share_library_build.packageSpringboot()
+                    packageSpringboot()
                 }
             }
         }
@@ -67,7 +67,7 @@ pipeline {
         stage('Sonarqube') {
             steps {
                 script {
-                    share_library_test.qualitySonarCheck(env)
+                    qualitySonarCheck(env)
                 }
             }
         }
@@ -78,7 +78,7 @@ pipeline {
             }
             steps {
                 script {
-                    share_library_deploy.pushArtifactNexusJava(env)
+                    pushArtifactNexusJava(env)
                 }
             }
         }
@@ -90,8 +90,8 @@ pipeline {
             agent { label 'JDK8' }
             steps {
                 script {
-                    share_library_deploy.pullArtifactNexusJava(env)
-                    share_library_deploy.deployJava(env)
+                    pullArtifactNexusJava(env)
+                    deployJava(env)
                     withCredentials([usernamePassword(credentialsId: 'for-github', usernameVariable: 'user', passwordVariable: 'pass')]) {
                         sh """
                         git config --global user.email "duy.nguyentadinh@gmail.com"
@@ -111,7 +111,7 @@ pipeline {
             agent { label 'JDK8' }
             steps {
                 script {
-                    share_library_deploy.healthCheck()
+                    healthCheck()
                 }
             }
         }
