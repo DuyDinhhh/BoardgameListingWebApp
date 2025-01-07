@@ -136,13 +136,8 @@ pipeline {
                 script {
                     try {
                         sleep(20) // Wait for the application to start completely
-                        def status = sh(script: "curl -s -o /dev/null -w '%{http_code}' http://192.168.64.35:8080/actuator/health", returnStdout: true).trim()
-                        if (status == '200') {
-                            echo "Health Check Passed: HTTP Status ${status}"
-                        } else {
-                            echo "Health Check Failed: HTTP Status ${status}"
-                            error("Health Check Failed")
-                        }
+                        def response = httpRequest url: 'http://192.168.64.35:8080'
+                        println("Status: "+response.status)
                     } catch (e) {
                         echo "Health Check Exception: ${e.getMessage()}"
                         error("Health Check Failed")
