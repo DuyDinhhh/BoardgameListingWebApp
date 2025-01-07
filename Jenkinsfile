@@ -1,4 +1,5 @@
-@Library(['share_library_build','share_library_test','share_library_deploy']) _
+@Library(['share_library_build', 'share_library_test', 'share_library_deploy']) _
+
 pipeline {
     agent { label 'JDK17' }
 
@@ -14,7 +15,7 @@ pipeline {
         NEXUS_REPOSITORY = 'maven-releases'
         NEXUS_GROUP = 'com/javaproject'
         NEXUS_ARTIFACT_ID = 'database_service_project'
-        ARTIFACT_VERS="1.${env.BUILD_ID}"
+        ARTIFACT_VERS = "1.${env.BUILD_ID}"
     }
 
     stages {
@@ -38,7 +39,7 @@ pipeline {
 
         stage('Compile') {
             steps {
-                script{
+                script {
                     share_library_build.buildSpringboot()
                 }
             }
@@ -46,25 +47,27 @@ pipeline {
 
         stage('Test') {
             steps {
-                script{
+                script {
                     share_library_test.unitTestJava()
                 }
-             }
+            }
         }
 
         stage('Package') {
             when {
                 expression { env.PIPELINE_TYPE != 'develop' }
             }
-            script{
-                share_library_build.packageSpringboot()
+            steps {
+                script {
+                    share_library_build.packageSpringboot()
+                }
             }
         }
 
         stage('Sonarqube') {
             steps {
                 script {
-                     share_library_test.qualitySonarCheck(env)
+                    share_library_test.qualitySonarCheck(env)
                 }
             }
         }
@@ -75,7 +78,7 @@ pipeline {
             }
             steps {
                 script {
-                     share_library_deploy.pushArtifactNexusJava(env)
+                    share_library_deploy.pushArtifactNexusJava(env)
                 }
             }
         }
@@ -89,7 +92,6 @@ pipeline {
                 script {
                     share_library_deploy.pullArtifactNexusJava(env)
                     share_library_deploy.deployJava(env)
-            }
                     withCredentials([usernamePassword(credentialsId: 'for-github', usernameVariable: 'user', passwordVariable: 'pass')]) {
                         sh """
                         git config --global user.email "duy.nguyentadinh@gmail.com"
@@ -109,7 +111,7 @@ pipeline {
             agent { label 'JDK8' }
             steps {
                 script {
-                     share_library_deploy.healthCheck()
+                    share_library_deploy.healthCheck()
                 }
             }
         }
@@ -126,14 +128,14 @@ pipeline {
                 }
             }
             mail to: "duy2004tv@gmail.com",
-            subject: "${JOB_NAME} - Build # ${BUILD_NUMBER} - SUCCESS!",
-            body: "Check console output at ${BUILD_URL} to view the results."
+                 subject: "${JOB_NAME} - Build # ${BUILD_NUMBER} - SUCCESS!",
+                 body: "Check console output at ${BUILD_URL} to view the results."
         }
         failure {
             echo 'Pipeline failed. Please review the logs.'
             mail to: "duy2004tv@gmail.com",
-            subject: "${JOB_NAME} - Build # ${BUILD_NUMBER} - FAILURE!",
-            body: "Failed Log: ${FAILED_STAGE_LOG}. Check console output at ${BUILD_URL} to view the results."
+                 subject: "${JOB_NAME} - Build # ${BUILD_NUMBER} - FAILURE!",
+                 body: "Failed Log: ${FAILED_STAGE_LOG}. Check console output at ${BUILD_URL} to view the results."
         }
     }
 }
