@@ -1,3 +1,4 @@
+@Library(['share_library_build','share_library_test','share_library_deploy']) _
 pipeline {
     agent { label 'JDK17' }
 
@@ -37,36 +38,33 @@ pipeline {
 
         stage('Compile') {
             steps {
-                sh 'mvn compile'
+                script{
+                    share_library_build.buildSpringboot()
+                }
             }
         }
 
         stage('Test') {
             steps {
-                sh 'mvn test'
-            }
+                script{
+                    share_library_test.unitTestJava()
+                }
+             }
         }
 
         stage('Package') {
             when {
                 expression { env.PIPELINE_TYPE != 'develop' }
             }
-            steps {
-                sh 'mvn clean package'
+            script{
+                share_library_build.packageSpringboot()
             }
         }
 
         stage('Sonarqube') {
             steps {
                 script {
-                    withSonarQubeEnv('SONAR_LATEST') {
-                        sh """
-                        $SCANNER_HOME/bin/sonar-scanner \
-                        -Dsonar.projectKey=${env.BRANCH_NAME.replace('/', '_')} \
-                        -Dsonar.projectName=${env.BRANCH_NAME} \
-                        -Dsonar.java.binaries=target/classes
-                        """
-                    }
+                     share_library_test.qualitySonarCheck(env)
                 }
             }
         }
@@ -77,25 +75,7 @@ pipeline {
             }
             steps {
                 script {
-                    def artifactPath = "target/${NEXUS_ARTIFACT_ID}-0.0.1.jar"
-                    def artifactVersion = "${ARTIFACT_VERS}-${env.DEPLOY_TAG}"
-                    nexusArtifactUploader(
-                        nexusVersion: 'nexus3',
-                        protocol: 'http',
-                        nexusUrl: NEXUS_URL,
-                        groupId: NEXUS_GROUP,
-                        version: artifactVersion,
-                        repository: NEXUS_REPOSITORY,
-                        credentialsId: NEXUS_CREDENTIALS_ID,
-                        artifacts: [
-                            [
-                                artifactId: NEXUS_ARTIFACT_ID,
-                                classifier: '',
-                                file: artifactPath,
-                                type: 'jar'
-                            ]
-                        ]
-                    )
+                     share_library_deploy.pushArtifactNexusJava(env)
                 }
             }
         }
@@ -107,14 +87,9 @@ pipeline {
             agent { label 'JDK8' }
             steps {
                 script {
-                    def artifactVersion = "${ARTIFACT_VERS}-${env.DEPLOY_TAG}"
-                    withCredentials([usernamePassword(credentialsId: 'for-nexus', passwordVariable: 'pass', usernameVariable: 'user')]) {
-                        sh """
-                        curl -u $user:$pass -O \
-                        http://${NEXUS_URL}/repository/${NEXUS_REPOSITORY}/${NEXUS_GROUP}/${NEXUS_ARTIFACT_ID}/${artifactVersion}/${NEXUS_ARTIFACT_ID}-${artifactVersion}.jar
-                        """
-                        sh "java -jar ${NEXUS_ARTIFACT_ID}-${artifactVersion}.jar &"
-                    }
+                    share_library_deploy.pullArtifactNexusJava(env)
+                    share_library_deploy.deployJava(env)
+            }
                     withCredentials([usernamePassword(credentialsId: 'for-github', usernameVariable: 'user', passwordVariable: 'pass')]) {
                         sh """
                         git config --global user.email "duy.nguyentadinh@gmail.com"
@@ -134,14 +109,7 @@ pipeline {
             agent { label 'JDK8' }
             steps {
                 script {
-                    try {
-                        sleep(20) // Wait for the application to start completely
-                        def response = httpRequest url: 'http://192.168.64.35:8080'
-                        println("Status: "+response.status)
-                    } catch (e) {
-                        echo "Health Check Exception: ${e.getMessage()}"
-                        error("Health Check Failed")
-                    }
+                     share_library_deploy.healthCheck()
                 }
             }
         }
