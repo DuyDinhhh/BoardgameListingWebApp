@@ -13,7 +13,7 @@ pipeline {
         NEXUS_REPOSITORY = 'maven-releases'
         NEXUS_GROUP = 'com/javaproject'
         NEXUS_ARTIFACT_ID = 'database_service_project'
-        ARTIFACT_VERS='0.0.1'
+        ARTIFACT_VERS="1.${env.BUILD_ID}"
     }
 
     stages {
@@ -77,13 +77,14 @@ pipeline {
             }
             steps {
                 script {
-                    def artifactPath = "target/${NEXUS_ARTIFACT_ID}-${ARTIFACT_VERS}.jar"
+                    def artifactPath = "target/${NEXUS_ARTIFACT_ID}-1.0.0.jar"
+                    def artifactPathVersion = "${ARTIFACT_VERS}-${env.DEPLOY_TAG}"
                     nexusArtifactUploader(
                         nexusVersion: 'nexus3',
                         protocol: 'http',
                         nexusUrl: NEXUS_URL,
                         groupId: NEXUS_GROUP,
-                        version: env.DEPLOY_TAG,
+                        version: artifactPathVersion,
                         repository: NEXUS_REPOSITORY,
                         credentialsId: NEXUS_CREDENTIALS_ID,
                         artifacts: [
