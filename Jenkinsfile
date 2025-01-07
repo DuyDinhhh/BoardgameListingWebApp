@@ -1,6 +1,6 @@
 @Library('share_library_build') _
 pipeline {
-    agent any
+    agent {label 'JDK17'}
     stages {
         stage('Test Shared Library') {
             steps {
