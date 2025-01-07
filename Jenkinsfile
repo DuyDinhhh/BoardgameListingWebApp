@@ -27,7 +27,7 @@ pipeline {
                         env.DEPLOY_TAG = "${new Date().format('yyMMdd')}-uat-${env.GIT_COMMIT.substring(0, 7)}"
                     } else if (env.BRANCH_NAME == 'main') {
                         env.PIPELINE_TYPE = 'main'
-                        env.DEPLOY_TAG = "${new Date().format('yyMMdd')}-release}"
+                        env.DEPLOY_TAG = "${new Date().format('yyMMdd')}-release"
                     } else {
                         error("Branch ${env.BRANCH_NAME} is not managed by this pipeline.")
                     }
@@ -78,13 +78,13 @@ pipeline {
             steps {
                 script {
                     def artifactPath = "target/${NEXUS_ARTIFACT_ID}-0.0.1.jar"
-                    def artifactPathVersion = "${ARTIFACT_VERS}-${env.DEPLOY_TAG}"
+                    def artifactVersion = "${ARTIFACT_VERS}-${env.DEPLOY_TAG}"
                     nexusArtifactUploader(
                         nexusVersion: 'nexus3',
                         protocol: 'http',
                         nexusUrl: NEXUS_URL,
                         groupId: NEXUS_GROUP,
-                        version: env.DEPLOY_TAG,
+                        version: artifactVersion,
                         repository: NEXUS_REPOSITORY,
                         credentialsId: NEXUS_CREDENTIALS_ID,
                         artifacts: [
