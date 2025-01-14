@@ -76,15 +76,7 @@ pipeline {
             }
             steps {
                 script {
-                    pushArtifactNexusJava([
-                        NEXUS_ARTIFACT_ID: env.NEXUS_ARTIFACT_ID,
-                        ARTIFACT_VERS: env.ARTIFACT_VERS,
-                        DEPLOY_TAG: env.DEPLOY_TAG,
-                        NEXUS_URL: env.NEXUS_URL,
-                        NEXUS_GROUP: env.NEXUS_GROUP,
-                        NEXUS_REPOSITORY: env.NEXUS_REPOSITORY,
-                        NEXUS_CREDENTIALS_ID: env.NEXUS_CREDENTIALS_ID
-                    ])
+                    pushArtifactNexusJava()
                 }
             }
         }
