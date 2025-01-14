@@ -66,13 +66,7 @@ pipeline {
 
         stage('Sonarqube') {
             steps {
-                script {
-                    qualitySonarCheck([
-                        sonarEnv: env.sonarEnv,
-                        scannerHome: env.SCANNER_HOME,
-                        BRANCH_NAME: env.BRANCH_NAME
-                    ])
-                }
+                qualitySonarCheck()
             }
         }
 
@@ -101,21 +95,8 @@ pipeline {
             }
             agent { label 'JDK8' }
             steps {
-                script {
-                    pullArtifactNexusJava([
-                        NEXUS_ARTIFACT_ID: env.NEXUS_ARTIFACT_ID,
-                        ARTIFACT_VERS: env.ARTIFACT_VERS,
-                        DEPLOY_TAG: env.DEPLOY_TAG,
-                        NEXUS_URL: env.NEXUS_URL,
-                        NEXUS_GROUP: env.NEXUS_GROUP,
-                        NEXUS_REPOSITORY: env.NEXUS_REPOSITORY,
-                        NEXUS_CREDENTIALS_ID: env.NEXUS_CREDENTIALS_ID
-                    ])
-                    deployJava([
-                        NEXUS_ARTIFACT_ID: env.NEXUS_ARTIFACT_ID,
-                        ARTIFACT_VERS: env.ARTIFACT_VERS,
-                        DEPLOY_TAG: env.DEPLOY_TAG
-                    ])
+                    pullArtifactNexusJava()
+                    deployJava()
                     // withCredentials([usernamePassword(credentialsId: 'for-github', usernameVariable: 'user', passwordVariable: 'pass')]) {
                     //     sh """
                     //     git config --global user.email "duy.nguyentadinh@gmail.com"
@@ -125,7 +106,6 @@ pipeline {
                     //     """
                     // }
                 }
-            }
         }
 
         stage('Health Check') {
