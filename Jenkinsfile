@@ -116,14 +116,14 @@ pipeline {
                         ARTIFACT_VERS: env.ARTIFACT_VERS,
                         DEPLOY_TAG: env.DEPLOY_TAG
                     ])
-                    withCredentials([usernamePassword(credentialsId: 'for-github', usernameVariable: 'user', passwordVariable: 'pass')]) {
-                        sh """
-                        git config --global user.email "duy.nguyentadinh@gmail.com"
-                        git config --global user.name "duydinhhh"
-                        git tag -a ${env.DEPLOY_TAG} -m "Deployed ${env.PIPELINE_TYPE} environment"
-                        git push https://$user:$pass@github.com/DuyDinhhh/BoardgameListingWebApp.git ${env.DEPLOY_TAG}
-                        """
-                    }
+                    // withCredentials([usernamePassword(credentialsId: 'for-github', usernameVariable: 'user', passwordVariable: 'pass')]) {
+                    //     sh """
+                    //     git config --global user.email "duy.nguyentadinh@gmail.com"
+                    //     git config --global user.name "duydinhhh"
+                    //     git tag -a ${env.DEPLOY_TAG} -m "Deployed ${env.PIPELINE_TYPE} environment"
+                    //     git push https://$user:$pass@github.com/DuyDinhhh/BoardgameListingWebApp.git ${env.DEPLOY_TAG}
+                    //     """
+                    // }
                 }
             }
         }
