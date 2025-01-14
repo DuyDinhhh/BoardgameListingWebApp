@@ -114,7 +114,7 @@ pipeline {
                     deployJava([
                         NEXUS_ARTIFACT_ID: env.NEXUS_ARTIFACT_ID,
                         ARTIFACT_VERS: env.ARTIFACT_VERS,
-                        DEPLOY_TAG: env.DEPLOY_TAG,
+                        DEPLOY_TAG: env.DEPLOY_TAG
                     ])
                     withCredentials([usernamePassword(credentialsId: 'for-github', usernameVariable: 'user', passwordVariable: 'pass')]) {
                         sh """
