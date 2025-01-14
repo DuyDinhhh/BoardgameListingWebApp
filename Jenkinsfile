@@ -10,7 +10,7 @@ pipeline {
 
     environment {
         SCANNER_HOME = tool 'sonar-scanner'
-        NEXUS_URL = '192.168.64.37:8081'
+        NEXUS_URL = '192.168.66.6:8081'
         NEXUS_CREDENTIALS_ID = 'for-nexus'
         NEXUS_REPOSITORY = 'maven-releases'
         NEXUS_GROUP = 'com/javaproject'
